@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="AttendanceTracker.Core/AttendanceTracker.Core.csproj" />
+  <Project Path="AttendanceTracker.Data/AttendanceTracker.Data.csproj" Id="c3e3daf1-0d60-47b3-9088-519dea87898f" />
+  <Project Path="AttendanceTracker/AttendanceTracker.csproj" Id="ceb8a369-88af-42a8-80cf-91dce6fc75a7" />
+</Solution>
