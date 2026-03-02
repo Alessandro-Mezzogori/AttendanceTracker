@@ -202,13 +202,17 @@
 																Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
 																CornerRadius="8"
 																Padding="8"
-																BoxShadow="0 4 8 2 #1A000000"> <Grid ColumnDefinitions="1*, 1.5*, 1.5*, Auto">
+																BoxShadow="0 4 8 2 #1A000000"> <Grid ColumnDefinitions="1*, 2*, 1.5*, 1.5*, Auto">
 
 																	<StackPanel Grid.Column="0" VerticalAlignment="Center">
 																		<TextBlock Text="{Binding Date}" FontWeight="Bold" FontSize="15" />
 																	</StackPanel>
 
 																	<StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0">
+																		<TextBlock Text="{Binding SecondName}" FontSize="13" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>
+																	</StackPanel>
+
+																	<StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="12,0">
 																		<StackPanel Orientation="Horizontal" Spacing="6">
 																			<TextBlock Text="{Binding From}" FontWeight="Medium"/>
 																			<TextBlock Text="-" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
@@ -216,15 +220,14 @@
 																		</StackPanel>
 																	</StackPanel>
 
-																						
-																	<StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="12,0">
+																	<StackPanel Grid.Column="3" VerticalAlignment="Center" Margin="12,0">
 																		<StackPanel Orientation="Horizontal" Spacing="6">
 																			<TextBlock Text="{Binding Duration, StringFormat='{}{0}'}" FontSize="12" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 																			<TextBlock Text="{Binding DurataAccadamica, StringFormat='{}({0})'}" FontSize="12" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 																		</StackPanel>
 																	</StackPanel>
 
-																	<StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Spacing="12" Margin="12,0,0,0">
+																	<StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" Spacing="12" Margin="12,0,0,0">
 																		<Button Classes="actionChip danger"
 																				IsHitTestVisible="False"
 																				ToolTip.Tip="Mark as Cancelled"
