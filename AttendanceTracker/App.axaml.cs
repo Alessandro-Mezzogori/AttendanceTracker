@@ -100,25 +100,36 @@ public partial class App : Application
 
 public class NotificationService
 {
+    private Window _window;
     private WindowNotificationManager _manager;
 
-    public NotificationService(WindowNotificationManager manager)
+    public NotificationService(Window window)
     {
-        _manager = manager;
-    }
-
-    // This method will be called by the View (MainWindow) to "hook" the manager
-    public void SetHostWindow(Visual host)
-    {
-        _manager = new WindowNotificationManager(TopLevel.GetTopLevel(host))
+        _window = window;
+        _manager = new WindowNotificationManager(window)
         {
             Position = NotificationPosition.BottomRight,
             MaxItems = 3
-        };
+        }; ;
     }
 
-    public void Show(string title, string message, NotificationType type = NotificationType.Information)
+    public void Show(string title, string message, NotificationType type = NotificationType.Information, TimeSpan? expiration = null)
     {
-        _manager?.Show(new Notification(title, message, type, TimeSpan.FromSeconds(3)));
+        expiration ??= TimeSpan.FromSeconds(5);
+
+        var notification = type switch {
+            NotificationType.Error => new Notification(title, message, type, expiration, onClick: async () =>
+            {
+                if(_window.Clipboard is not null)
+                {
+                    await _window.Clipboard.SetTextAsync(message);
+                    this.Show("Copied!", string.Empty);
+                }
+            }),
+            _ => new Notification(title, message, type, expiration),
+        };
+
+
+        _manager.Show(notification);
     }
 }

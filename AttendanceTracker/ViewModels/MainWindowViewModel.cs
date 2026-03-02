@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using ClosedXML.Excel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DocumentFormat.OpenXml.InkML;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -17,12 +18,12 @@ namespace AttendanceTracker.ViewModels
 {
     public partial class AttendedTime : ObservableObject
     {
-        public required string CourseName { get; set; }
+        public Course Course { get; set; }
         public double Total { get; set; }
         public double Attended { get; set; }
         public double Percentage => Attended / Total * 100;
     }
- 
+
     public partial class LessonDTO : ObservableObject
     {
         public int Id { get; set; } = 0;
@@ -103,7 +104,7 @@ namespace AttendanceTracker.ViewModels
         }
 
         public string Greeting { get; set; } = "Welcome to Avalonia!";
-       
+
         public async Task LoadAsync()
         {
             IQueryable<Lesson> query = _ctx.Lessons.Include(x => x.Course);
@@ -111,7 +112,7 @@ namespace AttendanceTracker.ViewModels
                 query = query.Where(x => x.Date >= FilterStartDate);
             if (FilterEndDate is not null)
                 query = query.Where(x => x.Date <= FilterEndDate);
-                
+
             query = query
                 .OrderBy(x => x.Date)
                 .ThenBy(x => x.From)
@@ -121,7 +122,7 @@ namespace AttendanceTracker.ViewModels
                 ;
 
             Lessons.Clear();
-            await foreach(var lesson in query.AsAsyncEnumerable())
+            await foreach (var lesson in query.AsAsyncEnumerable())
             {
                 Lessons.Add(LessonDTO.FromLesson(lesson));
             }
@@ -168,11 +169,11 @@ namespace AttendanceTracker.ViewModels
         {
             App.Logger.LogInformation("Starting import excel");
 
-            using(var workbook = new XLWorkbook(fileUri.AbsolutePath)) 
+            using (var workbook = new XLWorkbook(fileUri.AbsolutePath))
             {
                 var worksheet = workbook.Worksheet(1);
                 var rows = worksheet.RangeUsed()?.RowsUsed().Skip(6);
-                if(rows is null)
+                if (rows is null)
                 {
                     App.Logger.LogError("Couldn't import");
                     return;
@@ -181,7 +182,7 @@ namespace AttendanceTracker.ViewModels
                 var lessons = await _ctx.Lessons.ToListAsync();
                 var courses = await _ctx.Courses.ToListAsync();
 
-                foreach(var row in rows)
+                foreach (var row in rows)
                 {
                     var date = DateOnly.Parse(row.Cell(1).GetValue<string>());
                     var hours = row.Cell(2).GetValue<string>().Split("-");
@@ -198,7 +199,7 @@ namespace AttendanceTracker.ViewModels
 
                     // find course or update
                     var course = courses.Find(x => x.CourseName == courseName && x.SecondName == x.SecondName);
-                    if(course is null)
+                    if (course is null)
                     {
                         course = new()
                         {
@@ -211,7 +212,7 @@ namespace AttendanceTracker.ViewModels
 
                     // find lesson
                     var lesson = lessons.Find(x => x.CourseId == course.Id && x.Date == date && x.From == from_time && x.To == to_time);
-                    if(lesson is null)
+                    if (lesson is null)
                     {
                         lesson = new Core.Model.Lesson
                         {
@@ -243,6 +244,43 @@ namespace AttendanceTracker.ViewModels
 
             }
             return;
+        }
+
+        public async Task LoadDashboard()
+        {
+            var rawData = _ctx
+                .Lessons
+                .GroupBy(l => l.Course)
+                .AsEnumerable()
+                .Select(g => new
+                {
+                    Course = g.Key,
+
+                    // Sums duration for lessons that are NOT cancelled
+                    Total = g
+                        .Where(lesson => lesson.Status != LessonStatus.Cancelled)
+                        .Sum(lesson => lesson.Duration.TotalMinutes),
+
+                    // Sums duration for lessons that ARE attended
+                    Attended = g
+                        .Where(lesson => lesson.Status == LessonStatus.Attended)
+                        .Where(x => x.Date <= DateOnly.FromDateTime(DateTime.Now))
+                        .Sum(lesson => lesson.Duration.TotalMinutes)
+                });
+
+            var courses = _ctx.Courses.ToList();
+
+            // 2. Map the results to your ObservableObject class in memory
+            AttendedTime.Clear();
+            foreach (var data in rawData)
+            {
+                AttendedTime.Add(new AttendedTime
+                {
+                    Course = data.Course,
+                    Total = data.Total / 45,
+                    Attended = data.Attended / 45
+                });
+            }
         }
     }
 }

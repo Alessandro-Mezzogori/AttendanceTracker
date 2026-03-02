@@ -11,17 +11,11 @@ namespace AttendanceTracker.Views
 {
     public partial class MainWindow : Window
     {
-        private readonly WindowNotificationManager _manager;
         private readonly NotificationService _notificationService;
 
         public MainWindow()
         {
-            _manager = new WindowNotificationManager(this)
-            {
-                Position = NotificationPosition.BottomRight,
-                MaxItems = 3
-            };
-            _notificationService = new NotificationService(_manager);
+            _notificationService = new NotificationService(this);
 
             InitializeComponent();
         }
@@ -45,6 +39,25 @@ namespace AttendanceTracker.Views
             _calendarInitialLoad = false;
         }
 
+        private async void ClearDates_Click(object? sender, RoutedEventArgs e)
+        {
+            if (DataContext is not MainWindowViewModel vm)
+                return;
+
+            this.FilterCalendar.SelectedDates.Clear();
+            vm.FilterStartDate = null;
+            vm.FilterEndDate = null;
+
+            try
+            {
+                await vm.LoadAsync();
+            }
+            catch (Exception ex)
+            {
+                _notificationService.Show("Load error", $"{ex.Message}", Avalonia.Controls.Notifications.NotificationType.Error);
+            }
+        }
+
         private async void FilterCalendar_SelectedDatesChanged(object? sender, EventArgs e)
         {
             if (_calendarInitialLoad == true)
@@ -53,7 +66,6 @@ namespace AttendanceTracker.Views
             if (DataContext is not MainWindowViewModel vm)
                 return;
 
-            
             if (this.FilterCalendar.SelectedDates.Count > 0)
             {
                 vm.FilterStartDate = DateOnly.FromDateTime(this.FilterCalendar.SelectedDates.Min());
@@ -65,7 +77,14 @@ namespace AttendanceTracker.Views
                 vm.FilterEndDate = null;
             }
 
-            await vm.LoadAsync();
+            try
+            {
+                await vm.LoadAsync();
+            }
+            catch (Exception ex)
+            {
+                _notificationService.Show("Load error", $"{ex.Message}", Avalonia.Controls.Notifications.NotificationType.Error);
+            }
         }
 
         private async void ImportExcel_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -101,8 +120,32 @@ namespace AttendanceTracker.Views
         {
             base.OnLoaded(e);
 
-            if(DataContext is MainWindowViewModel vm)
+            if (DataContext is MainWindowViewModel vm)
                 await vm.LoadAsync();
+        }
+
+        private async void TabControl_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (DataContext is not MainWindowViewModel vm)
+                return;
+
+            if (MainTabs.SelectedItem is TabItem selectedTab && selectedTab.Header?.ToString() == "Dashboard")
+            {
+                // Call your loading logic here
+                try
+                {
+                    await vm.LoadDashboard();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                    _notificationService.Show("Load dashbaord error", $"{ex.Message}", Avalonia.Controls.Notifications.NotificationType.Error);
+                }
+            }
+            else
+            {
+                vm.AttendedTime.Clear();
+            }
         }
     }
 }
