@@ -68,6 +68,10 @@ namespace AttendanceTracker.ViewModels
         public ObservableCollection<LessonDTO> Lessons { get; } = new ObservableCollection<LessonDTO>();
         public ObservableCollection<AttendedTime> AttendedTime { get; } = new ObservableCollection<AttendedTime>();
 
+        public DateOnly? FilterStartDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
+        public DateOnly? FilterEndDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
+
+
         public MainWindowViewModel(DatabaseContext ctx)
         {
             _ctx = ctx;
@@ -97,34 +101,41 @@ namespace AttendanceTracker.ViewModels
        
         public async Task LoadAsync()
         {
-            var enumerable = _ctx.Lessons
+            IQueryable<Lesson> query = _ctx.Lessons;
+            if (FilterStartDate is not null)
+                query = query.Where(x => x.Date >= FilterStartDate);
+            if (FilterEndDate is not null)
+                query = query.Where(x => x.Date <= FilterEndDate);
+                
+            query = query
                 .OrderBy(x => x.Date)
                 .ThenBy(x => x.From)
                 .ThenBy(x => x.To)
                 .ThenBy(x => x.CourseName)
                 .ThenBy(x => x.SecondName)
-                .AsAsyncEnumerable();
+                ;
 
-            await foreach(var lesson in enumerable)
+            Lessons.Clear();
+            await foreach(var lesson in query.AsAsyncEnumerable())
             {
                 Lessons.Add(LessonDTO.FromLesson(lesson));
             }
 
 
-            var attented = _ctx.Lessons
-                .GroupBy(x => x.CourseName)
-                .AsEnumerable()
-                .Select(x => new AttendedTime
-                {
-                    CourseName = x.Key,
-                    Total = x.Sum(x => x.Duration.TotalMinutes) / 45,
-                    Attended = x.Sum(y => y.Status == LessonStatus.Attended ? y.Duration.TotalMinutes : 0) / 45
-                });
+            //var attented = _ctx.Lessons
+            //    .GroupBy(x => x.CourseName)
+            //    .AsEnumerable()
+            //    .Select(x => new AttendedTime
+            //    {
+            //        CourseName = x.Key,
+            //        Total = x.Sum(x => x.Duration.TotalMinutes) / 45,
+            //        Attended = x.Sum(y => y.Status == LessonStatus.Attended ? y.Duration.TotalMinutes : 0) / 45
+            //    });
 
-            foreach (var a in attented)
-            {
-                AttendedTime.Add(a);
-            }
+            //foreach (var a in attented)
+            //{
+            //    AttendedTime.Add(a);
+            //}
         }
 
         private async Task MarkStatus(LessonDTO lessonDto, LessonStatus status)

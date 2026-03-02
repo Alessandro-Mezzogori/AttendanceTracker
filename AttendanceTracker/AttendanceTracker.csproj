@@ -13,10 +13,10 @@
   </ItemGroup>
 
   <ItemGroup>
+	<PackageReference Include="HotAvalonia" Version="3.*" PrivateAssets="All" Publish="True" />
 	<PackageReference Include="Avalonia.Controls.ItemsRepeater" Version="11.1.5" />
 	<PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.1.1" />
 	<PackageReference Include="ClosedXML" Version="0.105.0" />
-	<PackageReference Include="HotAvalonia" Version="3.*" PrivateAssets="All" Publish="True" />
     <PackageReference Include="Avalonia" Version="11.3.12" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.12" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.12" />
