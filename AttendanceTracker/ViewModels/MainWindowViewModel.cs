@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using ClosedXML.Excel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DocumentFormat.OpenXml.Drawing;
 using DocumentFormat.OpenXml.InkML;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -22,6 +23,8 @@ namespace AttendanceTracker.ViewModels
         public double Total { get; set; }
         public double Attended { get; set; }
         public double Percentage => Attended / Total * 100;
+
+        public ObservableCollection<LessonDTO> Lessons { get; set; } = new();
     }
 
     public partial class LessonDTO : ObservableObject
@@ -248,8 +251,9 @@ namespace AttendanceTracker.ViewModels
 
         public async Task LoadDashboard()
         {
-            var rawData = _ctx
-                .Lessons
+            var lessons = await _ctx.Lessons.Include(x => x.Course).ToListAsync();
+
+            var rawData = lessons
                 .GroupBy(l => l.Course)
                 .AsEnumerable()
                 .Select(g => new
@@ -268,8 +272,6 @@ namespace AttendanceTracker.ViewModels
                         .Sum(lesson => lesson.Duration.TotalMinutes)
                 });
 
-            var courses = _ctx.Courses.ToList();
-
             // 2. Map the results to your ObservableObject class in memory
             AttendedTime.Clear();
             foreach (var data in rawData)
@@ -278,7 +280,14 @@ namespace AttendanceTracker.ViewModels
                 {
                     Course = data.Course,
                     Total = data.Total / 45,
-                    Attended = data.Attended / 45
+                    Attended = data.Attended / 45,
+                    Lessons = new ObservableCollection<LessonDTO>(
+                        lessons
+                            .Where(l => l.Course == data.Course)
+                            .OrderBy(l => l.Date)
+                            .ThenBy(l => l.From)
+                            .Select(LessonDTO.FromLesson)
+                    )
                 });
             }
         }
