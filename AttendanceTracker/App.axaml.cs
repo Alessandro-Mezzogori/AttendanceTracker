@@ -1,8 +1,11 @@
+using AttendanceTracker;
 using AttendanceTracker.Data.Services;
 using AttendanceTracker.ViewModels;
 using AttendanceTracker.Views;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Notifications;
 using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Diagnostics;
@@ -13,84 +16,109 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 
-namespace AttendanceTracker
+namespace AttendanceTracker;
+
+public partial class App : Application
 {
-    public partial class App : Application
+    public static ILogger<Application> Logger = null!;
+
+    public override void Initialize()
     {
-        public static ILogger<Application> Logger;
+        AvaloniaXamlLoader.Load(this);
 
-        public override void Initialize()
+        var loggerFactory = LoggerFactory.Create(b => b
+            .SetMinimumLevel(LogLevel.Information)
+            .ClearProviders()
+            .AddConsole());
+
+        this.AttachDeveloperTools(o =>
         {
-            AvaloniaXamlLoader.Load(this);
+            o.AddMicrosoftLoggerObservable(loggerFactory);
+        });
 
-            var loggerFactory = LoggerFactory.Create(b => b
-                .SetMinimumLevel(LogLevel.Information)
-                .ClearProviders()
-                .AddConsole());
+        Logger = loggerFactory.CreateLogger<Application>();
+    }
 
-            this.AttachDeveloperTools(o =>
+    private IServiceProvider SetupDependencyInjection()
+    {
+
+        var collection = new ServiceCollection();
+
+        // ViewModels
+        collection.AddTransient<MainWindowViewModel>();
+        collection.AddDataServices();
+
+
+        var services = collection.BuildServiceProvider();
+
+        return services;
+    }
+
+    private void SetupDatabase(IServiceProvider provider)
+    {
+        using var scope = provider.CreateScope();
+        using var ctx = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+
+        ctx.Database.Migrate();
+    }
+
+    public override void OnFrameworkInitializationCompleted()
+    {
+        var _provider = SetupDependencyInjection();
+
+        SetupDatabase(_provider);
+
+        var vm = _provider.GetRequiredService<MainWindowViewModel>();
+
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
+            // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
+            DisableAvaloniaDataAnnotationValidation();
+            desktop.MainWindow = new MainWindow
             {
-                o.AddMicrosoftLoggerObservable(loggerFactory);
-            });
-
-            Logger = loggerFactory.CreateLogger<Application>();
+                DataContext = vm,
+            };
         }
 
-        private IServiceProvider SetupDependencyInjection()
+        base.OnFrameworkInitializationCompleted();
+    }
+
+    private void DisableAvaloniaDataAnnotationValidation()
+    {
+        // Get an array of plugins to remove
+        var dataValidationPluginsToRemove =
+            BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray();
+
+        // remove each entry found
+        foreach (var plugin in dataValidationPluginsToRemove)
         {
-
-            var collection = new ServiceCollection();
-
-            // ViewModels
-            collection.AddTransient<MainWindowViewModel>();
-            collection.AddDataServices();
-
-
-            var services = collection.BuildServiceProvider();
-
-            return services;
+            BindingPlugins.DataValidators.Remove(plugin);
         }
+    }
+}
 
-        private void SetupDatabase(IServiceProvider provider)
+public class NotificationService
+{
+    private WindowNotificationManager _manager;
+
+    public NotificationService(WindowNotificationManager manager)
+    {
+        _manager = manager;
+    }
+
+    // This method will be called by the View (MainWindow) to "hook" the manager
+    public void SetHostWindow(Visual host)
+    {
+        _manager = new WindowNotificationManager(TopLevel.GetTopLevel(host))
         {
-            using var scope = provider.CreateScope();
-            using var ctx = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+            Position = NotificationPosition.BottomRight,
+            MaxItems = 3
+        };
+    }
 
-            ctx.Database.Migrate();
-        }
-
-        public override void OnFrameworkInitializationCompleted()
-        {
-            var _provider = SetupDependencyInjection();
-
-            SetupDatabase(_provider);
-
-            var vm = _provider.GetRequiredService<MainWindowViewModel>();
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
-                // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
-                DisableAvaloniaDataAnnotationValidation();
-                desktop.MainWindow = new MainWindow
-                {
-                    DataContext = vm,
-                };
-            }
-
-            base.OnFrameworkInitializationCompleted();
-        }
-
-        private void DisableAvaloniaDataAnnotationValidation()
-        {
-            // Get an array of plugins to remove
-            var dataValidationPluginsToRemove =
-                BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray();
-
-            // remove each entry found
-            foreach (var plugin in dataValidationPluginsToRemove)
-            {
-                BindingPlugins.DataValidators.Remove(plugin);
-            }
-        }
+    public void Show(string title, string message, NotificationType type = NotificationType.Information)
+    {
+        _manager?.Show(new Notification(title, message, type, TimeSpan.FromSeconds(3)));
     }
 }

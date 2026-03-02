@@ -1,7 +1,9 @@
 using AttendanceTracker.ViewModels;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Notifications;
 using Avalonia.Interactivity;
+using DocumentFormat.OpenXml.ExtendedProperties;
 using System;
 using System.Linq;
 
@@ -9,8 +11,18 @@ namespace AttendanceTracker.Views
 {
     public partial class MainWindow : Window
     {
+        private readonly WindowNotificationManager _manager;
+        private readonly NotificationService _notificationService;
+
         public MainWindow()
         {
+            _manager = new WindowNotificationManager(this)
+            {
+                Position = NotificationPosition.BottomRight,
+                MaxItems = 3
+            };
+            _notificationService = new NotificationService(_manager);
+
             InitializeComponent();
         }
 
@@ -66,20 +78,31 @@ namespace AttendanceTracker.Views
 
             if (files.Count >= 1)
             {
-                var file = files.First();
+                var file = files[0];
 
                 if (DataContext is MainWindowViewModel vm)
                 {
-                    var result = await vm.ImportExcel(file.Path);
+                    try
+                    {
+                        await vm.ImportExcel(file.Path);
+                        await vm.LoadAsync();
+
+                        _notificationService.Show("Import completed", "Import completed successfully", Avalonia.Controls.Notifications.NotificationType.Success);
+                    }
+                    catch (Exception ex)
+                    {
+                        _notificationService.Show("Import error", $"Imported ended with error: {Environment.NewLine} {ex.Message}", Avalonia.Controls.Notifications.NotificationType.Error);
+                    }
                 }
             }
         }
 
-        protected override void OnLoaded(RoutedEventArgs e)
+        protected override async void OnLoaded(RoutedEventArgs e)
         {
             base.OnLoaded(e);
 
-            (DataContext as MainWindowViewModel)!.LoadAsync();
+            if(DataContext is MainWindowViewModel vm)
+                await vm.LoadAsync();
         }
     }
 }

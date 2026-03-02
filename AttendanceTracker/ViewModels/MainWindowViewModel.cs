@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -25,6 +26,7 @@ namespace AttendanceTracker.ViewModels
     public partial class LessonDTO : ObservableObject
     {
         public int Id { get; set; } = 0;
+        public required string DisplayName { get; set; }
         public required string CourseName { get; set; }
         public string? SecondName { get; set; }
         public required DateOnly Date { get; set; }
@@ -50,10 +52,11 @@ namespace AttendanceTracker.ViewModels
             return new()
             {
                 Id = lesson.Id,
-                CourseName = lesson.CourseName,
-                SecondName = lesson.SecondName,
+                DisplayName = lesson.Course.DisplayName,
+                CourseName = lesson.Course.CourseName,
+                SecondName = lesson.Course.SecondName,
                 Date = lesson.Date,
-                _status = lesson.Status,
+                Status = lesson.Status,
                 Duration = lesson.Duration,
                 From = lesson.From,
                 To = lesson.To,
@@ -80,6 +83,7 @@ namespace AttendanceTracker.ViewModels
             {
                 Lessons = new ObservableCollection<LessonDTO>([
                     new LessonDTO {
+                        DisplayName = "Test course name",
                         CourseName = "Test course name",
                         Date = DateOnly.FromDateTime(DateTime.Now),
                         From = new TimeOnly(10, 00),
@@ -87,6 +91,7 @@ namespace AttendanceTracker.ViewModels
                         Duration = TimeSpan.FromHours(1)
                     },
                     new LessonDTO{
+                        DisplayName = "Test course name 2",
                         CourseName = "Test course name 2",
                         Date = DateOnly.FromDateTime(DateTime.Now),
                         From = new TimeOnly(12, 00),
@@ -101,7 +106,7 @@ namespace AttendanceTracker.ViewModels
        
         public async Task LoadAsync()
         {
-            IQueryable<Lesson> query = _ctx.Lessons;
+            IQueryable<Lesson> query = _ctx.Lessons.Include(x => x.Course);
             if (FilterStartDate is not null)
                 query = query.Where(x => x.Date >= FilterStartDate);
             if (FilterEndDate is not null)
@@ -111,8 +116,8 @@ namespace AttendanceTracker.ViewModels
                 .OrderBy(x => x.Date)
                 .ThenBy(x => x.From)
                 .ThenBy(x => x.To)
-                .ThenBy(x => x.CourseName)
-                .ThenBy(x => x.SecondName)
+                .ThenBy(x => x.Course.DisplayName)
+                .ThenBy(x => x.Course.SecondName)
                 ;
 
             Lessons.Clear();
@@ -159,7 +164,7 @@ namespace AttendanceTracker.ViewModels
         [RelayCommand]
         public Task MarkAttendedAsync(LessonDTO lessonDto) => MarkStatus(lessonDto, LessonStatus.NotAttended);
 
-        public async Task<bool> ImportExcel(Uri fileUri)
+        public async Task ImportExcel(Uri fileUri)
         {
             App.Logger.LogInformation("Starting import excel");
 
@@ -170,88 +175,74 @@ namespace AttendanceTracker.ViewModels
                 if(rows is null)
                 {
                     App.Logger.LogError("Couldn't import");
-                    return false;
+                    return;
                 }
 
-                _ctx.Lessons.ExecuteDelete();
-
-                var list = new List<Core.Model.Lesson>();
+                var lessons = await _ctx.Lessons.ToListAsync();
+                var courses = await _ctx.Courses.ToListAsync();
 
                 foreach(var row in rows)
                 {
-                    var date = row.Cell(1).GetValue<string>();
+                    var date = DateOnly.Parse(row.Cell(1).GetValue<string>());
                     var hours = row.Cell(2).GetValue<string>().Split("-");
 
                     var startHour = hours[0].Trim();
                     var endHour = hours[1].Trim();
 
-                    var courses = row.Cell(3).GetValue<string>().Split("-");
-
-                    var course = courses[0].Trim();
-                    var course_second = courses.Length > 1 ? courses[1].Trim() : null;
+                    var courseSplitName = row.Cell(3).GetValue<string>().Split("-");
+                    var courseName = courseSplitName[0].Trim();
+                    var courseSecondName = courseSplitName.Length > 1 ? courseSplitName[1].Trim() : null;
 
                     var from_time = TimeOnly.Parse(startHour);
                     var to_time = TimeOnly.Parse(endHour);
 
-                    list.Add(new Core.Model.Lesson
+                    // find course or update
+                    var course = courses.Find(x => x.CourseName == courseName && x.SecondName == x.SecondName);
+                    if(course is null)
                     {
-                        CourseName = course,
-                        SecondName = course_second,
-                        Date = DateOnly.Parse(date),
-                        From = from_time,
-                        To = to_time,
-                        Duration = to_time - from_time,
-                    });
+                        course = new()
+                        {
+                            DisplayName = courseName,
+                            CourseName = courseName,
+                            SecondName = courseSecondName,
+                        };
+                        courses.Add(course);
+                    }
+
+                    // find lesson
+                    var lesson = lessons.Find(x => x.CourseId == course.Id && x.Date == date && x.From == from_time && x.To == to_time);
+                    if(lesson is null)
+                    {
+                        lesson = new Core.Model.Lesson
+                        {
+                            Course = course,
+                            Date = date,
+                            From = from_time,
+                            To = to_time,
+                            Duration = to_time - from_time,
+                        };
+                        lessons.Add(lesson);
+                    }
                 }
-
-                list.Sort((x,y) =>
-                {
-                    if (x.Date < y.Date)
-                        return -1;
-                    else if (x.Date > y.Date)
-                        return 1;
-
-                    if (x.From < y.From)
-                        return -1;
-                    else if (x.From > y.From)
-                        return 1;
-
-                    if (x.To < y.To)
-                        return -1;
-                    else if (x.To > y.To)
-                        return 1;
-
-                    var course = x.CourseName.CompareTo(y.CourseName);
-                    if (course != 0)
-                        return course;
-
-                    if (x.SecondName is not null && y.SecondName is not null)
-                        return x.SecondName.CompareTo(y.SecondName);
-
-                    return 0;
-                });
 
                 var transaction = _ctx.Database.BeginTransaction();
                 try
                 {
-                    await _ctx.Lessons.ExecuteDeleteAsync();
-                    _ctx.Lessons.AddRange(list);
+                    _ctx.Courses.UpdateRange(courses);
+                    await _ctx.SaveChangesAsync();
+
+                    _ctx.Lessons.UpdateRange(lessons);
                     await _ctx.SaveChangesAsync();
                     await transaction.CommitAsync();
                 }
                 catch
                 {
                     await transaction.RollbackAsync();
+                    throw;
                 }
 
-                Lessons.Clear();
-                foreach(var lesson in list)
-                {
-                    Lessons.Add(LessonDTO.FromLesson(lesson));
-                }
             }
-
-            return true;
+            return;
         }
     }
 }

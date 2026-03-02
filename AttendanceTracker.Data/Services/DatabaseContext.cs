@@ -6,6 +6,7 @@ namespace AttendanceTracker.Data.Services;
 public class DatabaseContext : DbContext
 {
     public DbSet<Lesson> Lessons { get; set; }
+    public DbSet<Course> Courses { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -20,15 +21,25 @@ public class DatabaseContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        var course = modelBuilder.Entity<Course>();
+        course.HasKey(x => x.Id);
+        course.Property(x => x.Id).ValueGeneratedOnAdd();
+        course.Property(x => x.DisplayName).IsRequired();
+        course.Property(x => x.CourseName).IsRequired();
+        course.Property(x => x.SecondName);
+
+
         var lesson = modelBuilder.Entity<Lesson>();
         lesson.HasKey(x => x.Id);
         lesson.Property(x => x.Id).ValueGeneratedOnAdd();
-        lesson.Property(x => x.CourseName).IsRequired();
-        lesson.Property(x => x.SecondName);
         lesson.Property(x => x.Date).IsRequired();
         lesson.Property(x => x.From).IsRequired();
         lesson.Property(x => x.To).IsRequired();
         lesson.Property(x => x.Duration).IsRequired();
         lesson.Property(x => x.Status).IsRequired();
+        lesson.HasOne(x => x.Course).WithMany().HasForeignKey(x => x.CourseId).HasPrincipalKey(x => x.Id);
     }
+
+    public const string LessonIndex = "UNQ_LessonOnDay";
+    public const string CourseIndex = "UNQ_CourseNames";
 }
