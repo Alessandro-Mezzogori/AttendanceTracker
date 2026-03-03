@@ -9,6 +9,10 @@
 		<local:ViewLocator/>
 	</Application.DataTemplates>
 
+	<Application.Resources>
+		<StreamGeometry x:Key="delete_regular">M15,4V3H9V4H4V6H5V19A3,3 0 0,0 8,22H16A3,3 0 0,0 19,19V6H20V4H15M11,17H9V8H11V17M15,17H13V8H15V17Z</StreamGeometry>
+	</Application.Resources>
+
 	<Application.Styles>
 		<FluentTheme />
 	</Application.Styles>

@@ -212,7 +212,7 @@ namespace AttendanceTracker.Views
             try
             {
                 var startingStorage = await this.StorageProvider.TryGetFolderFromPathAsync(vm.AppDataFolder());
-                await this.Launcher.LaunchFileAsync(startingStorage);   
+                await this.Launcher.LaunchFileAsync(startingStorage);
             }
             catch (Exception ex)
             {

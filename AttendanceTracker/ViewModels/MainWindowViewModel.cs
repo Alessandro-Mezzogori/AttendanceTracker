@@ -14,6 +14,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 
 namespace AttendanceTracker.ViewModels
@@ -168,6 +169,21 @@ namespace AttendanceTracker.ViewModels
 
         [RelayCommand]
         public Task MarkAttendedAsync(LessonDTO lessonDto) => MarkStatus(lessonDto, LessonStatus.NotAttended);
+
+        public async Task DeleteLesson(LessonDTO lessonDto)
+        {
+            if (lessonDto is null)
+                return;
+
+            var lesson = _ctx.Lessons.FirstOrDefault(x => x.Id == lessonDto.Id);
+            if (lesson is null)
+                return;
+
+            _ctx.Remove(lesson);
+            await _ctx.SaveChangesAsync();
+
+            Lessons.Remove(lessonDto);
+        }
 
         public async Task ImportExcel(Uri fileUri)
         {
