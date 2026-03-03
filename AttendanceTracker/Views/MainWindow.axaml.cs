@@ -157,12 +157,67 @@ namespace AttendanceTracker.Views
             try
             {
                 await vm.BackupDatabase();
-                _notificationService.Show("Backupp success", $"backup avvenuto con successo", Avalonia.Controls.Notifications.NotificationType.Success);
+                _notificationService.Show("Backup success", $"backup avvenuto con successo", Avalonia.Controls.Notifications.NotificationType.Success);
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
                 _notificationService.Show("Backup error", $"{ex.Message}", Avalonia.Controls.Notifications.NotificationType.Error);
+            }
+        }
+
+        private async void Restore_Click(object? sender, RoutedEventArgs e)
+        {
+            if (DataContext is not MainWindowViewModel vm)
+                return;
+
+            try
+            {
+                var startingStorage = await this.StorageProvider.TryGetFolderFromPathAsync(vm.AppDataFolder());
+
+                var files = await this.StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
+                {
+                    Title = "Select backup",
+                    AllowMultiple = false,
+                    SuggestedStartLocation = startingStorage,
+                    FileTypeFilter = [
+                        new FilePickerFileType("Attendance tracker backup"){
+                            Patterns = ["*.db"]
+                        }
+                    ]
+                });
+
+
+                if (files.Count >= 1)
+                {
+                    var file = files[0];
+
+                    await vm.RestoreDatabase(file.Path);
+                    _notificationService.Show("restore success", $"backup avvenuto con successo", Avalonia.Controls.Notifications.NotificationType.Success);
+                    await vm.LoadAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                _notificationService.Show("restore error", $"{ex.Message}", Avalonia.Controls.Notifications.NotificationType.Error);
+            }
+        }
+
+        private async void AppDataFolder_Click(object? sender, RoutedEventArgs e)
+        {
+            if (DataContext is not MainWindowViewModel vm)
+                return;
+
+            try
+            {
+                var startingStorage = await this.StorageProvider.TryGetFolderFromPathAsync(vm.AppDataFolder());
+                await this.Launcher.LaunchFileAsync(startingStorage);   
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                _notificationService.Show("appdatafolder open error", $"{ex.Message}", Avalonia.Controls.Notifications.NotificationType.Error);
             }
         }
     }

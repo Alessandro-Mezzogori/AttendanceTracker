@@ -55,6 +55,8 @@
 				<MenuItem Header="_File">
 					<MenuItem Header="_Import excel..." Click="ImportExcel_Click"/>
 					<MenuItem Header="_Backup..." Click="Backup_Click"/>
+					<MenuItem Header="_Restore..." Click="Restore_Click"/>
+					<MenuItem Header="_Open data folder..." Click="AppDataFolder_Click"/>
 				</MenuItem>
 			</Menu>
 		</Border>

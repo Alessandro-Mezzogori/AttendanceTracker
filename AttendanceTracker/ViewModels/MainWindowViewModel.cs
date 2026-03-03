@@ -295,7 +295,19 @@ namespace AttendanceTracker.ViewModels
 
         public async Task BackupDatabase()
         {
-            File.Copy(_ctx.DbPath, $"{_ctx.DbPath}.{DateTime.Now.ToString("dd-MM-yyyy_HHmm")}");
+            File.Copy(_ctx.DbPath, $"{_ctx.DbPath}.{DateTime.Now.ToString("dd-MM-yyyy_HHmm")}.db");
+        }
+
+        public async Task RestoreDatabase(Uri backupToRestore)
+        {
+            await _ctx.Database.CloseConnectionAsync();
+            File.Copy(backupToRestore.AbsolutePath, _ctx.DbPath, true);
+            await _ctx.Database.OpenConnectionAsync();
+        }
+
+        public string AppDataFolder()
+        {
+            return _ctx.AppFolder;
         }
     }
 }
