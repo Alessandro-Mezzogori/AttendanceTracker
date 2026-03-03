@@ -8,15 +8,16 @@ public class DatabaseContext : DbContext
     public DbSet<Lesson> Lessons { get; set; }
     public DbSet<Course> Courses { get; set; }
 
+    public string Folder => Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    public String AppFolder => Path.Combine(Folder, "am-attendancetracker");
+    public string DbPath => Path.Combine(AppFolder, "appdata.db");
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        string folder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        string appfolder = Path.Combine(folder, "am-attendancetracker");
-        if (!Directory.Exists(appfolder))
-            Directory.CreateDirectory(appfolder);
+        if (!Directory.Exists(AppFolder))
+            Directory.CreateDirectory(AppFolder);
 
-        string dbpath = Path.Combine(appfolder, "appdata.db");
-        optionsBuilder.UseSqlite($"Data Source={dbpath}");
+        optionsBuilder.UseSqlite($"Data Source={DbPath}");
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

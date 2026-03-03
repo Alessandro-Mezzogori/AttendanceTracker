@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -290,6 +291,11 @@ namespace AttendanceTracker.ViewModels
                     )
                 });
             }
+        }
+
+        public async Task BackupDatabase()
+        {
+            File.Copy(_ctx.DbPath, $"{_ctx.DbPath}.{DateTime.Now.ToString("dd-MM-yyyy_HHmm")}");
         }
     }
 }

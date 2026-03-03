@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
 using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
 using DocumentFormat.OpenXml.ExtendedProperties;
 using System;
 using System.Linq;
@@ -145,6 +146,23 @@ namespace AttendanceTracker.Views
             else
             {
                 vm.AttendedTime.Clear();
+            }
+        }
+
+        private async void Backup_Click(object? sender, RoutedEventArgs e)
+        {
+            if (DataContext is not MainWindowViewModel vm)
+                return;
+
+            try
+            {
+                await vm.BackupDatabase();
+                _notificationService.Show("Backupp success", $"backup avvenuto con successo", Avalonia.Controls.Notifications.NotificationType.Success);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                _notificationService.Show("Backup error", $"{ex.Message}", Avalonia.Controls.Notifications.NotificationType.Error);
             }
         }
     }
