@@ -185,6 +185,21 @@ namespace AttendanceTracker.ViewModels
             Lessons.Remove(lessonDto);
         }
 
+        public async Task SaveCourseName(LessonDTO lessonDto)
+        {
+            if (lessonDto is null)
+                return;
+
+            var lesson = _ctx.Lessons.Include(x => x.Course).FirstOrDefault(x => x.Id == lessonDto.Id);
+            if (lesson is null)
+                return;
+
+            lesson.Course.DisplayName = lessonDto.DisplayName;
+            await _ctx.SaveChangesAsync();
+
+            await LoadAsync();
+        }
+
         public async Task ImportExcel(Uri fileUri)
         {
             App.Logger.LogInformation("Starting import excel");

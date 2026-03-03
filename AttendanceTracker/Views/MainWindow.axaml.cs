@@ -2,8 +2,10 @@ using AttendanceTracker.ViewModels;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
+using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.VisualTree;
 using DocumentFormat.OpenXml.ExtendedProperties;
 using System;
 using System.Linq;
@@ -218,6 +220,31 @@ namespace AttendanceTracker.Views
             {
                 Console.WriteLine(ex.ToString());
                 _notificationService.Show("appdatafolder open error", $"{ex.Message}", Avalonia.Controls.Notifications.NotificationType.Error);
+            }
+        }
+
+        private void EditCourse_Click(object? sender, RoutedEventArgs e)
+        {
+            if (sender is not MenuItem menuItem)
+                return;
+
+            var ctx = menuItem.Parent as ContextMenu;
+            var popup = ctx?.Parent as Popup;
+            var border = popup?.Parent as Border;
+            if (border is null)
+                return;
+
+            var flyout = FlyoutBase.GetAttachedFlyout(border);
+            flyout?.ShowAt(border);
+        }
+
+        private void CloseFlyout_Click(object? sender, RoutedEventArgs e)
+        {
+            var s = sender as Control;
+
+            if(s.FindAncestorOfType<FlyoutPresenter>() is { Parent: Popup popup })
+            {
+                popup.IsOpen = false;
             }
         }
     }

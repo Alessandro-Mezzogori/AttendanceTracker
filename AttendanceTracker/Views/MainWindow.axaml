@@ -116,18 +116,58 @@
 											CornerRadius="8"
 											Padding="16"
 											BoxShadow="0 4 8 2 #1A000000">
+										<FlyoutBase.AttachedFlyout>
+											<Flyout Placement="Bottom" d:DataContext="{Binding}">
+												<StackPanel Spacing="10" Width="250">
+													<TextBlock Text="Edit Course Name" FontWeight="Bold"/>
+													<TextBox Name="EditCourseTextBox" Text="{Binding DisplayName, Mode=TwoWay}"/>
+
+													<Grid ColumnDefinitions="*, *">
+														<Button Grid.Column="0"
+																Content="Save"
+																Classes="success"
+																Margin="0,0,5,0"
+																HorizontalAlignment="Stretch"
+																HorizontalContentAlignment="Center"
+																Command="{Binding $parent[Window].DataContext.SaveCourseName}"
+																CommandParameter="{Binding}"
+																/>
+														<Button Grid.Column="1"
+																Content="Cancel"
+																Margin="5,0,0,0"
+																HorizontalAlignment="Stretch"
+																HorizontalContentAlignment="Center"
+																Click="CloseFlyout_Click"/> </Grid>
+												</StackPanel>
+											</Flyout>
+										</FlyoutBase.AttachedFlyout>
+
 										<Border.ContextMenu>
 											<ContextMenu>
-												<MenuItem
-												Classes="danger"
-												Header="Delete"
-												Command="{Binding $parent[Window].DataContext.DeleteLesson}"
-												CommandParameter="{Binding}">
+												<MenuItem Header="Edit Course Name" Click="EditCourse_Click">
+													<MenuItem.Icon>
+														<PathIcon Data="{StaticResource edit_regular}"/>
+													</MenuItem.Icon>
+												</MenuItem>
+												<MenuItem Header="Delete" Classes="danger">
 													<MenuItem.Icon>
 														<PathIcon Data="{StaticResource delete_regular}" Foreground="{Binding $parent[MenuItem].Foreground}"/>
 													</MenuItem.Icon>
+
+													<MenuItem Header="Confirm Delete"
+															  Foreground="#Ef4444"
+															  Command="{Binding $parent[Window].DataContext.DeleteLesson}"
+															  CommandParameter="{Binding}">
+														<MenuItem.Icon>
+															<PathIcon Data="{StaticResource delete_regular}" />
+														</MenuItem.Icon>
+													</MenuItem>
+
+													<Separator/>
+													<MenuItem Header="Cancel" />
 												</MenuItem>
 											</ContextMenu>
+
 										</Border.ContextMenu>
 
 										<Grid ColumnDefinitions="100, 2*, 1.5*, Auto">
@@ -137,8 +177,18 @@
 											</StackPanel>
 
 											<StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0">
-												<TextBlock Text="{Binding CourseName}" FontWeight="Bold" FontSize="16" TextTrimming="CharacterEllipsis"/>
-												<TextBlock Text="{Binding SecondName}" FontSize="13" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>
+												<StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0">
+													<TextBlock Text="{Binding DisplayName}"
+															   FontWeight="Bold"
+															   FontSize="16"
+															   TextTrimming="CharacterEllipsis"
+															   Background="Transparent"/>
+													<TextBlock Text="{Binding SecondName}" FontSize="13"
+															   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+															   Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>
+												</StackPanel>
+												<!--<TextBlock Text="{Binding CourseName}" FontWeight="Bold" FontSize="16" TextTrimming="CharacterEllipsis"/>-->
+												<!--<TextBlock Text="{Binding SecondName}" FontSize="13" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>-->
 											</StackPanel>
 
 											<StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="16,0">
