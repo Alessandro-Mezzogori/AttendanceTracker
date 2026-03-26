@@ -17,7 +17,7 @@ public class DatabaseContext : DbContext
         if (!Directory.Exists(AppFolder))
             Directory.CreateDirectory(AppFolder);
 
-        optionsBuilder.UseSqlite($"Data Source={DbPath}");
+        optionsBuilder.UseSqlite($"Data Source={DbPath};Pooling=false");
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

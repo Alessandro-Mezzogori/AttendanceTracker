@@ -6,7 +6,7 @@
 		mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
 		x:Class="AttendanceTracker.Views.MainWindow"
 		x:DataType="vm:MainWindowViewModel"
-		Icon="/Assets/avalonia-logo.ico"
+		Icon="/Assets/cricetupi.png"
 		Title="AttendanceTracker"
 		WindowStartupLocation="CenterScreen"
 		Background="{DynamicResource SystemRegionBrush}">
@@ -200,7 +200,7 @@
 
 												<StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,4,0,0">
 													<TextBlock Text="{Binding Duration, StringFormat='{}{0}'}" FontSize="12" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-													<TextBlock Text="{Binding DurataAccadamica, StringFormat='{}({0})'}" FontSize="12" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+													<TextBlock Text="{Binding DurataAccadamica, StringFormat='{}({0}h)'}" FontSize="12" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 												</StackPanel>
 											</StackPanel>
 
@@ -244,6 +244,16 @@
 			<TabItem Header="Dashboard">
 				<ScrollViewer>
 					<StackPanel Spacing="20">
+						<StackPanel Spacing="10" Orientation="Horizontal" HorizontalAlignment="Right" Margin="20,0,20,0" VerticalAlignment="Center">
+							<NumericUpDown
+								Maximum="100"
+								Minimum="0"
+								Increment="1"
+								Value="{Binding NeededPercentage}"
+								FormatString="{}{0}%"
+								/>
+						</StackPanel>
+
 						<ItemsControl ItemsSource="{Binding AttendedTime}"
 									  Background="Transparent"
 									  BorderThickness="0"
@@ -258,13 +268,14 @@
 										<Expander.Header>
 											<Grid ColumnDefinitions="2*, Auto">
 												<TextBlock Grid.Column="0" Text="{Binding Course.DisplayName}"
-														   FontWeight="Bold" FontSize="16" VerticalAlignment="Center"/>
+														   FontWeight="Bold" FontSize="16" VerticalAlignment="Center" Foreground="{Binding AttendedColor}"/>
 
 												<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-													<TextBlock Text="{Binding Attended, StringFormat='{}{0}'}" FontWeight="Medium"/>
+													<TextBlock Text="{Binding Attended, StringFormat='{}{0}h'}" FontWeight="Medium" Foreground="{Binding AttendedColor}"/>
 													<TextBlock Text="/" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-													<TextBlock Text="{Binding Total, StringFormat='{}{0}'}" FontWeight="Medium"/>
+													<TextBlock Text="{Binding Total, StringFormat='{}{0}h'}" FontWeight="Medium"/>
 													<TextBlock Text="{Binding Percentage, StringFormat='{}({0:0.00} %)'}" FontWeight="Light"/>
+													<TextBlock Text="{Binding NeededHours, StringFormat='{}>{0:0}h'}" FontWeight="Light" Foreground="OrangeRed"/>
 												</StackPanel>
 											</Grid>
 										</Expander.Header>
@@ -302,7 +313,7 @@
 																	<StackPanel Grid.Column="3" VerticalAlignment="Center" Margin="12,0">
 																		<StackPanel Orientation="Horizontal" Spacing="6">
 																			<TextBlock Text="{Binding Duration, StringFormat='{}{0}'}" FontSize="12" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-																			<TextBlock Text="{Binding DurataAccadamica, StringFormat='{}({0})'}" FontSize="12" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+																			<TextBlock Text="{Binding DurataAccadamica, StringFormat='{}({0}h)'}" FontSize="12" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 																		</StackPanel>
 																	</StackPanel>
 

@@ -195,7 +195,7 @@ namespace AttendanceTracker.Views
                     var file = files[0];
 
                     await vm.RestoreDatabase(file.Path);
-                    _notificationService.Show("restore success", $"backup avvenuto con successo", Avalonia.Controls.Notifications.NotificationType.Success);
+                    _notificationService.Show("restore success", $"restore avvenuto con successo", Avalonia.Controls.Notifications.NotificationType.Success);
                     await vm.LoadAsync();
                 }
             }

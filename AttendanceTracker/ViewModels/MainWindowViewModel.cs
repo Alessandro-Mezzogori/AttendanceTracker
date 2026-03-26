@@ -1,6 +1,7 @@
 ﻿using AttendanceTracker.Core.Model;
 using AttendanceTracker.Data.Services;
 using Avalonia.Controls;
+using Avalonia.Media;
 using ClosedXML.Excel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -25,6 +26,14 @@ namespace AttendanceTracker.ViewModels
         public double Total { get; set; }
         public double Attended { get; set; }
         public double Percentage => Attended / Total * 100;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(NeededHours))]
+        [NotifyPropertyChangedFor(nameof(AttendedColor))]
+        private double _neededPercentage;
+
+        public double NeededHours => Math.Ceiling(Total * NeededPercentage);
+        public IBrush AttendedColor => Attended > NeededHours ? Brushes.LightGreen : Brushes.Black;
 
         public ObservableCollection<LessonDTO> Lessons { get; set; } = new();
     }
@@ -79,6 +88,16 @@ namespace AttendanceTracker.ViewModels
 
         public DateOnly? FilterStartDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
         public DateOnly? FilterEndDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
+        public int NeededPercentage { 
+            get; 
+            set
+            {
+                if(SetProperty(ref field, value))
+                {
+                    UpdateNeededPercentageAttendedTime();
+                }
+            } 
+        } = 67;
 
 
         public MainWindowViewModel(DatabaseContext ctx)
@@ -313,6 +332,7 @@ namespace AttendanceTracker.ViewModels
                     Course = data.Course,
                     Total = data.Total / 45,
                     Attended = data.Attended / 45,
+                    NeededPercentage = NeededPercentage / 100d,
                     Lessons = new ObservableCollection<LessonDTO>(
                         lessons
                             .Where(l => l.Course == data.Course)
@@ -321,6 +341,14 @@ namespace AttendanceTracker.ViewModels
                             .Select(LessonDTO.FromLesson)
                     )
                 });
+            }
+        }
+
+        public void UpdateNeededPercentageAttendedTime()
+        {
+            foreach(var time in AttendedTime)
+            {
+                time.NeededPercentage = NeededPercentage / 100d;
             }
         }
 
